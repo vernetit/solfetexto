@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SolfeTexto · Pentagramas coloreados</title>
+<script src="./vexflow.js"></script>
+<style>
+:root{
+  --bg:#090b12; --panel:#121725; --panel2:#0d1120; --text:#edf1ff; --muted:#96a0bd;
+  --line:#252d43; --accent:#76b8ff; --ok:#58d68d; --warn:#ffd06a; --radius:15px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:Inter,Segoe UI,Arial,sans-serif}
+body{padding-bottom:96px}
+.top{position:sticky;top:0;z-index:20;background:rgba(9,11,18,.94);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);padding:12px 15px}
+.head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;max-width:1500px;margin:auto}
+.title{font-size:20px;font-weight:800;letter-spacing:.02em}.title em{font-style:normal;color:var(--accent)}
+.hint{font-size:12px;color:var(--muted);margin-top:3px}
+.buttons{display:flex;gap:8px;flex-wrap:wrap}
+button,.fakeBtn,select,input[type=number]{background:#171f33;color:var(--text);border:1px solid #303952;border-radius:10px;min-height:38px;padding:8px 11px;font-size:14px;cursor:pointer}
+button:hover,.fakeBtn:hover{border-color:var(--accent)} button.primary{background:#18345b;border-color:#3567a1} button.play{background:#133d2a;border-color:#287d51}
+.fakeBtn{display:inline-flex;align-items:center}.fakeBtn input{display:none}
+main{max-width:1500px;margin:14px auto;padding:0 14px;display:grid;grid-template-columns:320px 1fr;gap:14px}
+aside,.music{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius)}
+aside{padding:13px;position:sticky;top:77px;height:calc(100vh - 115px);overflow:auto}
+.music{padding:12px;min-height:70vh}
+.section{padding-bottom:13px;margin-bottom:12px;border-bottom:1px solid var(--line)}
+.section:last-child{border-bottom:0}.section h3{font-size:12px;text-transform:uppercase;color:var(--muted);letter-spacing:.13em;margin:0 0 10px}
+label{font-size:12px;color:var(--muted);display:block;margin:8px 0 5px}
+select,input[type=number],input[type=range]{width:100%} input[type=range]{accent-color:var(--accent)}
+.row{display:grid;grid-template-columns:1fr 62px;align-items:center;gap:8px}.value{font-size:12px;color:var(--muted);text-align:right}
+textarea{width:100%;min-height:128px;resize:vertical;border-radius:10px;border:1px solid #303952;background:#0b1020;color:var(--text);padding:9px;font-size:13px;line-height:1.4}
+.status{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:13px;padding:0 3px 10px}
+.empty{border:1px dashed #34405a;color:var(--muted);border-radius:14px;padding:40px 22px;text-align:center;line-height:1.6}
+.scoreRow{background:white;border-radius:12px;margin-bottom:10px;overflow:hidden;border:1px solid #dde3ec}
+.scoreRow{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0 18px}.measure{background:white;border-radius:10px;overflow:hidden;box-shadow:0 1px 0 rgba(0,0,0,.14)}.staffSvg{overflow:hidden}.staffSvg .lyricText{font:700 12px Georgia,serif;paint-order:stroke;stroke:#fff;stroke-width:.8px}.staffSvg .lyricText.current{text-decoration:underline;text-decoration-thickness:2px;text-decoration-color:currentColor}.wordPreview .playing{outline:1px solid #fff}.sy{transition:background .1s,transform .1s}.sy.active{background:#1d2535;color:white !important;transform:translateY(-1px)}
+.legend{display:flex;flex-wrap:wrap;gap:7px}.degree{font-size:12px;display:flex;align-items:center;gap:5px;padding:5px 7px;border:1px solid var(--line);border-radius:8px}.dot{width:12px;height:12px;border-radius:50%;display:inline-block;border:1px solid rgba(255,255,255,.3)}
+.wordPreview{font-size:15px;line-height:1.9;padding:8px 2px;color:#dfe5fa}.wordPreview span{font-weight:700}.wordPreview .playing{border-radius:4px;background:#f1f4ff;color:#09101e;padding:2px 3px}
+.footer{position:fixed;z-index:30;left:0;right:0;bottom:0;background:rgba(9,11,18,.96);border-top:1px solid var(--line);padding:8px 15px}
+.footerIn{max-width:1500px;margin:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap}.mini{font-size:12px;color:var(--muted)}
+.toast{position:fixed;right:14px;bottom:104px;background:#1a263d;border:1px solid #364968;border-radius:10px;padding:10px 13px;opacity:0;transform:translateY(8px);pointer-events:none;transition:.16s;z-index:40}.toast.on{opacity:1;transform:none}
+.check{display:flex;align-items:center;gap:7px;color:var(--text);font-size:13px;margin:9px 0}.check input{accent-color:var(--accent)}
+.pager{display:flex;gap:6px;align-items:center}.pager input{width:63px;text-align:center}
+body.readonly aside{display:none} body.readonly main{display:block}.hidden{display:none!important}
+@media(max-width:920px){main{display:block}aside{position:relative;top:auto;height:auto;margin-bottom:12px}.buttons{width:100%}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="head">
+    <div><div class="title">Solfe<em>Texto</em> · pentagrama</div><div class="hint">Libro → sílabas → notas/rítmos de una escala → colores. Flechas: página. Espacio: reproducir/pausar.</div></div>
+    <div class="buttons">
+      <button id="fetchBtn">Cargar anillo.txt</button>
+      <label class="fakeBtn">Abrir TXT<input id="fileInput" type="file" accept=".txt,.html,text/plain,text/html"></label>
+      <button id="renderBtn" class="primary">Generar partitura</button>
+      <button id="focusBtn">Ocultar controles</button>
+    </div>
+  </div>
+</header>
+<main>
+<aside id="controls">
+  <div class="section">
+    <h3>Libro</h3>
+    <textarea id="inputText" spellcheck="false" placeholder="Cargá ./anillo.txt o pegá un texto acá..."></textarea>
+    <label>Palabras por página</label>
+    <div class="row"><input id="wordsPage" type="range" min="4" max="100" value="22"><span class="value" id="wordsPageOut">22</span></div>
+    <label>Página</label>
+    <div class="pager"><button id="prevSide">←</button><input id="pageInput" type="number" min="1" value="1"><span class="mini" id="pagesOut">/ 0</span><button id="nextSide">→</button></div>
+  </div>
+  <div class="section">
+    <h3>Melodía</h3>
+    <label>Escala</label><select id="scale"></select>
+    <label>Tónica</label><select id="root"></select>
+    <label>Registro</label><select id="octave"><option value="3">grave · octava 3</option><option value="4" selected>medio · octava 4</option><option value="5">agudo · octava 5</option></select>
+    <label>Recorrido</label><select id="pattern"><option value="up">ascendente cíclico</option><option value="zigzag" selected>sube y baja</option><option value="random">aleatorio estable</option></select>
+    <label>Compases por línea</label><div class="row"><input id="notesRow" type="range" min="1" max="4" value="2"><span class="value" id="notesRowOut">2</span></div>
+    <label>Ritmo</label>
+    <select id="rhythm"><option value="mixed" selected>Mixto · negras, corcheas, blancas y silencios</option><option value="quarters">Sólo negras</option><option value="eighths">Corcheas</option><option value="slow">Blancas y negras con silencios</option><option value="broken">Cortado · corcheas y silencios</option></select>
+  </div>
+  <div class="section">
+    <h3>Color</h3>
+    <label>Qué colorea la nota</label>
+    <select id="colorMode"><option value="degree" selected>Cabeza = grado · sílaba = letra</option><option value="syllable">Todo según la primera letra</option><option value="gradeAll">Todo según el grado</option></select>
+    <div id="degreeLegend" class="legend" style="margin-top:10px"></div>
+  </div>
+  <div class="section">
+    <h3>Sonido</h3>
+    <label>Velocidad</label><div class="row"><input id="bpm" type="range" min="35" max="240" value="90"><span class="value" id="bpmOut">90 bpm</span></div>
+    <label>Onda</label><select id="wave"><option value="sine">sine</option><option value="triangle" selected>triangle</option><option value="sawtooth">sawtooth</option><option value="square">square</option></select>
+    <label class="check"><input id="loop" type="checkbox"> repetir página</label>
+    <label class="check"><input id="advance" type="checkbox"> pasar a página siguiente al terminar</label>
+  </div>
+</aside>
+<section class="music">
+  <div class="status"><span id="bookStatus">Sin libro cargado</span><span id="pageStatus"></span></div>
+  <div id="score"><div class="empty">Poné este HTML junto a <b>anillo.txt</b> y apretá <b>Cargar anillo.txt</b>, o abrí cualquier TXT.<br>Después generá la partitura.</div></div>
+  <div id="preview" class="wordPreview"></div>
+</section>
+</main>
+<footer class="footer"><div class="footerIn"><button id="prev">← Página</button><button id="play" class="play">▶ Reproducir</button><button id="stop">■ Detener</button><button id="next" class="primary">Página →</button><span class="mini" id="transportStatus">Listo</span></div></footer>
+<div class="toast" id="toast"></div>
+<script>
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+const STORE = 'solfeTextoPentagrama.v2';
+const ABC = {
+ a:'rgb(0,0,180)', b:'rgb(175,13,102)', c:'rgb(146,248,70)', d:'rgb(255,200,47)', e:'rgb(255,118,0)', f:'rgb(255,152,213)', g:'rgb(235,235,222)', h:'rgb(100,100,100)', i:'rgb(255,255,0)', j:'rgb(255,255,150)', k:'rgb(55,19,112)', l:'rgb(202,62,94)', m:'rgb(205,145,63)', n:'rgb(12,75,100)', ñ:'rgb(12,75,100)', o:'rgb(255,0,0)', p:'rgb(175,155,50)', q:'rgb(185,185,185)', r:'rgb(37,70,25)', s:'rgb(121,33,135)', t:'rgb(83,140,208)', u:'rgb(0,154,37)', v:'rgb(178,220,205)', w:'rgb(169,34,0)', x:'rgb(0,0,74)', y:'rgb(175,200,74)', z:'rgb(63,25,12)'
+};
+const GRADE_LETTERS = [...'bcdefghijklmnop'];
+const ROOTS = ['C','C#','D','Eb','E','F','F#','G','Ab','A','Bb','B'];
+const ROOT_PC = [0,1,2,3,4,5,6,7,8,9,10,11];
+const SCALES = [
+ ['Mayor / Jónica',[0,2,4,5,7,9,11]], ['Menor natural / Eólica',[0,2,3,5,7,8,10]], ['Menor armónica',[0,2,3,5,7,8,11]], ['Menor melódica',[0,2,3,5,7,9,11]],
+ ['Pentatónica mayor',[0,2,4,7,9]], ['Pentatónica menor',[0,3,5,7,10]], ['Blues menor',[0,3,5,6,7,10]], ['Blues mayor',[0,2,3,4,7,9]],
+ ['Dórica',[0,2,3,5,7,9,10]], ['Frigia',[0,1,3,5,7,8,10]], ['Lidia',[0,2,4,6,7,9,11]], ['Mixolidia',[0,2,4,5,7,9,10]], ['Locria',[0,1,3,5,6,8,10]],
+ ['Cromática',[0,1,2,3,4,5,6,7,8,9,10,11]], ['Tonos enteros',[0,2,4,6,8,10]], ['Disminuida tono-semitono',[0,2,3,5,6,8,9,11]], ['Disminuida semitono-tono',[0,1,3,4,6,7,9,10]],
+ ['Húngara menor',[0,2,3,6,7,8,11]], ['Bizantina',[0,1,4,5,7,8,11]], ['Española / Frigia dominante',[0,1,4,5,7,8,10]], ['Hirajoshi',[0,2,3,7,8]], ['Iwato',[0,1,5,6,10]],
+ ['Arpegio mayor',[0,4,7]], ['Arpegio menor',[0,3,7]], ['Arpegio maj7',[0,4,7,11]], ['Arpegio m7',[0,3,7,10]], ['Arpegio dominante 7',[0,4,7,10]], ['Arpegio aumentado',[0,4,8]], ['Arpegio disminuido',[0,3,6,9]]
+];
+const RHYTHM_MODES = {
+ mixed: {durations:['h','q','8'], restChance:.19},
+ quarters: {durations:['q'], restChance:0},
+ eighths: {durations:['8'], restChance:.08},
+ slow: {durations:['h','q'], restChance:.22},
+ broken: {durations:['q','8'], restChance:.36}
+};
+const UNITS = {h:4,q:2,'8':1};
+const BEATS = {h:2,q:1,'8':.5};
+const FIGURE = {h:'blanca',q:'negra','8':'corchea'};
+const els = ['inputText','wordsPage','wordsPageOut','pageInput','pagesOut','scale','root','octave','pattern','notesRow','notesRowOut','rhythm','colorMode','degreeLegend','bpm','bpmOut','wave','loop','advance','bookStatus','pageStatus','score','preview','transportStatus'].reduce((o,k)=>(o[k]=$(k),o),{});
+let state = { raw:'', name:'', page:0, pages:[], notes:[], events:[], measures:[], playing:false, cursor:0, timer:null, audio:null, seed:421, rhythmTurn:1, rhythmCache:null, hidden:false };
+const FALLBACK = 'En un agujero en el suelo vivía un hobbit. No un agujero húmedo, sucio y repugnante, sino un agujero-hobbit, y eso significa comodidad.';
+function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('on'); clearTimeout(t._x); t._x=setTimeout(()=>t.classList.remove('on'),2300); }
+function cleanBookText(text){
+ if(!/<\/?[a-z][\s\S]*?>/i.test(text)) return text;
+ const doc = new DOMParser().parseFromString(text,'text/html');
+ doc.querySelectorAll('script,style,noscript').forEach(n=>n.remove());
+ doc.querySelectorAll('br').forEach(n=>n.replaceWith('\n'));
+ doc.querySelectorAll('p,div,section,article,h1,h2,h3,h4,h5,h6,li,blockquote,tr').forEach(n=>n.append('\n'));
+ return (doc.body.textContent||'').replace(/\u00a0/g,' ').replace(/[ \t]+\n/g,'\n').replace(/\n{3,}/g,'\n\n');
+}
+function normalWords(text){ return text.replace(/\r/g,' ').replace(/\s+/g,' ').trim().split(' ').filter(Boolean); }
+function paginate(){
+ const words = normalWords(state.raw); const per = +els.wordsPage.value; state.pages=[];
+ for(let i=0;i<words.length;i+=per) state.pages.push(words.slice(i,i+per));
+ if(!state.pages.length) state.pages=[[]]; state.page=Math.max(0,Math.min(state.page,state.pages.length-1));
+ els.pageInput.max=state.pages.length; els.pageInput.value=state.page+1; els.pagesOut.textContent='/ '+state.pages.length;
+}
+// Silabeo español liviano: suficiente para tocar/leer; conserva el espíritu de silabaJS del programa original.
+function syllabify(word){
+ const cleaned = word.toLowerCase().replace(/[^a-záéíóúüñ]/gi,''); if(!cleaned) return [];
+ const vowels = 'aeiouáéíóúü'; const strong='aeoáéó'; const isV = c => vowels.includes(c); const out=[]; let start=0, i=0;
+ while(i<cleaned.length){
+   while(i<cleaned.length && !isV(cleaned[i])) i++;
+   if(i>=cleaned.length){ if(out.length) out[out.length-1]+=cleaned.slice(start); else out.push(cleaned); break; }
+   let nucleusEnd=i+1;
+   if(nucleusEnd<cleaned.length && isV(cleaned[nucleusEnd])){
+     const a=cleaned[i], b=cleaned[nucleusEnd];
+     if(!(strong.includes(a)&&strong.includes(b)) || a==='i' || a==='u' || b==='i' || b==='u') nucleusEnd++;
+   }
+   let c=nucleusEnd; while(c<cleaned.length && !isV(cleaned[c])) c++;
+   if(c>=cleaned.length){ out.push(cleaned.slice(start)); break; }
+   const cluster=cleaned.slice(nucleusEnd,c); let cut;
+   if(cluster.length<=1) cut=nucleusEnd;
+   else if(/^(bl|br|cl|cr|dr|fl|fr|gl|gr|pl|pr|tr|ch|ll|rr)$/.test(cluster)) cut=nucleusEnd;
+   else cut=nucleusEnd + cluster.length-1;
+   out.push(cleaned.slice(start,cut)); start=cut; i=c;
+ }
+ return out.filter(Boolean);
+}
+function textSyllables(words){
+ const out=[]; words.forEach((word, wi)=>{ const ss=syllabify(word); ss.forEach((sy, si)=>out.push({sy, word, wordEnd:si===ss.length-1, wi})); }); return out;
+}
+function hash(n){ let x=Math.sin((n+state.seed)*999)*10000; return x-Math.floor(x); }
+function noteSequence(syllables){
+ const scale = SCALES[+els.scale.value][1], root = ROOT_PC[+els.root.value], oct=+els.octave.value, pattern=els.pattern.value;
+ let dir=1, idx=0;
+ return syllables.map((s,i)=>{
+   let degree;
+   if(pattern==='random') degree=Math.floor(hash(i)*scale.length);
+   else if(pattern==='zigzag') { degree=idx; if(scale.length>1){ idx+=dir; if(idx>=scale.length-1){idx=scale.length-1;dir=-1;} if(idx<=0){idx=0;dir=1;} } }
+   else degree=i%scale.length;
+   const midi=12*(oct+1)+root+scale[degree];
+   return {...s, degree, midi};
+ });
+}
+function rhythmRandFactory(){
+ let x = ((Date.now() & 0xffffffff) ^ ((state.page + 1) * 2654435761) ^ (state.rhythmTurn * 1597334677)) >>> 0;
+ return ()=>{ x ^= x << 13; x ^= x >>> 17; x ^= x << 5; return (x >>> 0) / 4294967296; };
+}
+function weightedPick(items, rng){ return items[Math.floor(rng()*items.length)]; }
+function measureSignature(slots){ return slots.map(s=>(s.rest?'r':'n')+s.d).join('-'); }
+function randomMeasure(mode, rng, forbid){
+ const cfg=RHYTHM_MODES[mode] || RHYTHM_MODES.mixed;
+ if(mode==='quarters') return [{d:'q'},{d:'q'},{d:'q'},{d:'q'}];
+ for(let attempt=0; attempt<80; attempt++){
+  let left=8, slots=[]; // 8 unidades de corchea = compás 4/4
+  while(left>0){
+   let possible=cfg.durations.filter(d=>UNITS[d]<=left);
+   // Evita cuatro blancas/imposibles y favorece variedad real dentro del compás.
+   let d=weightedPick(possible,rng);
+   if(mode==='mixed' && left>=4 && rng()<.25) d='h';
+   if(mode==='broken' && left>=1 && rng()<.68) d='8';
+   const rest = slots.length>0 && rng()<cfg.restChance;
+   slots.push({d,rest}); left-=UNITS[d];
+  }
+  // Que el compás no sea todo silencio ni repita el anterior visible.
+  if(slots.every(s=>s.rest)) slots[Math.floor(rng()*slots.length)].rest=false;
+  if(measureSignature(slots)!==forbid) return slots;
+ }
+ return [{d:'q'},{d:'8'},{d:'8'},{d:'q',rest:true},{d:'q'}];
+}
+function buildMeasures(notes){
+ let pos=0, measures=[], previous='', rng=rhythmRandFactory();
+ while(pos < notes.length){
+  const layout=randomMeasure(els.rhythm.value,rng,previous), events=[];
+  layout.forEach(slot=>{
+   if(slot.rest || pos>=notes.length) events.push({rest:true,duration:slot.d,beats:BEATS[slot.d]});
+   else { const note=notes[pos]; events.push({...note,rest:false,duration:slot.d,beats:BEATS[slot.d],noteIndex:pos}); pos++; }
+  });
+  measures.push(events); previous=measureSignature(layout);
+ }
+ return measures;
+}
+function newRhythm(){ state.rhythmTurn++; state.rhythmCache=null; }
+function letterColor(sy){ const c=sy.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()[0] || 's'; return ABC[c] || ABC.s; }
+function gradeColor(degree){ return ABC[GRADE_LETTERS[degree % GRADE_LETTERS.length]]; }
+function colors(note){
+ const lc=letterColor(note.sy), gc=gradeColor(note.degree), mode=els.colorMode.value;
+ return mode==='syllable' ? {note:lc,text:lc} : mode==='gradeAll' ? {note:gc,text:gc} : {note:gc,text:lc};
+}
+function midiToVex(midi){
+ const pitch=['c','c#','d','eb','e','f','f#','g','ab','a','bb','b'][midi%12], octave=Math.floor(midi/12)-1; return pitch+'/'+octave;
+}
+function pitchLabel(midi){ return ['C','C#','D','Eb','E','F','F#','G','Ab','A','Bb','B'][midi%12]+(Math.floor(midi/12)-1); }
+function renderLegend(){
+ const intervals=SCALES[+els.scale.value][1], root=ROOT_PC[+els.root.value], oct=+els.octave.value;
+ els.degreeLegend.innerHTML=intervals.map((semitone,i)=>`<div class="degree"><i class="dot" style="background:${gradeColor(i)}"></i>${i+1} · ${pitchLabel(12*(oct+1)+root+semitone)}</div>`).join('');
+}
+function renderPreview(){
+ els.preview.innerHTML=state.notes.map((n,i)=>`<span id="pv-${i}" style="color:${colors(n).text}">${escapeHTML(n.sy)}</span>${n.wordEnd?' ': '·'}`).join('');
+}
+function drawLyrics(svg,vfNotes,events){
+ const NS='http://www.w3.org/2000/svg';
+ const layer=document.createElementNS(NS,'g'); layer.setAttribute('class','lyricsLayer'); svg.appendChild(layer);
+ events.forEach((ev,idx)=>{
+  if(ev.rest) return;
+  const note=vfNotes[idx]; if(!note) return;
+  const t=document.createElementNS(NS,'text');
+  t.setAttribute('x',note.getAbsoluteX());
+  t.setAttribute('y','150');
+  t.setAttribute('text-anchor','middle');
+  t.setAttribute('class','lyricText');
+  t.setAttribute('fill',colors(ev).text);
+  t.setAttribute('stroke','none');
+  t.dataset.noteIndex=ev.noteIndex;
+  t.textContent=ev.sy;
+  layer.appendChild(t);
+ });
+}
+function escapeHTML(s){ return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function renderScore(regenerate=false){
+ stop(false); paginate(); const words=state.pages[state.page]||[]; state.notes=noteSequence(textSyllables(words)); if(regenerate || !state.rhythmCache){ newRhythm(); state.rhythmCache=buildMeasures(state.notes); } state.measures=state.rhythmCache; state.events=state.measures.flat(); renderLegend(); renderPreview();
+ els.bookStatus.textContent=(state.name||'Texto')+' · '+words.length+' palabras · '+state.notes.length+' sílabas · '+state.measures.length+' compases';
+ els.pageStatus.textContent=`Página ${state.page+1} / ${state.pages.length}`; els.score.innerHTML='';
+ if(!state.notes.length){ els.score.innerHTML='<div class="empty">Esta página no tiene sílabas para convertir.</div>'; save(); return; }
+ const VF=window.VexFlow || window.Vex;
+ if(!VF){ els.score.innerHTML='<div class="empty">No pude abrir la librería VexFlow. Verificá que <b>vexflow.js</b> esté junto a este HTML.</div>'; return; }
+ const barsPerLine=+els.notesRow.value;
+ for(let start=0; start<state.measures.length; start+=barsPerLine){
+  const row=document.createElement('div'); row.className='scoreRow'; els.score.appendChild(row);
+  state.measures.slice(start,start+barsPerLine).forEach((events,relativeBar)=>{
+   const bar=start+relativeBar, measure=document.createElement('div'); measure.className='measure'; row.appendChild(measure);
+   const staveDiv=document.createElement('div'); staveDiv.className='staffSvg'; measure.appendChild(staveDiv);
+   const width=events.length>=7 ? 380 : events.length>=5 ? 345 : 305;
+   try{
+    const renderer=new VF.Renderer(staveDiv,VF.Renderer.Backends.SVG); renderer.resize(width,178); const ctx=renderer.getContext();
+    const stave=new VF.Stave(10,20,width-20); stave.addClef('treble'); if(bar===0) stave.addTimeSignature('4/4'); stave.setContext(ctx).draw();
+    const vfNotes=events.map(ev=>{
+     if(ev.rest) return new VF.StaveNote({clef:'treble',keys:['b/4'],duration:ev.duration+'r'});
+     const key=midiToVex(ev.midi), note=new VF.StaveNote({clef:'treble',keys:[key],duration:ev.duration}); const col=colors(ev).note;
+     note.setStyle({fillStyle:col,strokeStyle:col});
+     const pitch=key.split('/')[0]; if(pitch.includes('#')) note.addModifier(new VF.Accidental('#'),0); else if(pitch.length>1 && pitch.endsWith('b')) note.addModifier(new VF.Accidental('b'),0);
+     return note;
+    });
+    const voice=new VF.Voice({num_beats:4,beat_value:4}).setStrict(false); voice.addTickables(vfNotes);
+    new VF.Formatter().joinVoices([voice]).format([voice],width-(bar===0?104:80)); voice.draw(ctx,stave);
+    drawLyrics(staveDiv.querySelector('svg'),vfNotes,events);
+   }catch(err){ staveDiv.innerHTML='<div style="padding:16px;color:#a00;background:#fff">Error de VexFlow: '+escapeHTML(err.message)+'</div>'; }
+  });
+ }
+ save();
+}
+function setText(text,name){ state.raw=cleanBookText(text).trim(); state.name=name; state.page=0; els.inputText.value=state.raw; newRhythm(); renderScore(true); toast('Libro cargado: '+name); }
+async function fetchBook(){
+ try{ const r=await fetch('./anillo.txt',{cache:'no-store'}); if(!r.ok) throw new Error('HTTP '+r.status); setText(await r.text(),'anillo.txt'); }
+ catch(e){ toast('No encontré anillo.txt. Usá Abrir TXT o pegá texto.'); if(!state.raw){ setText(FALLBACK,'texto de prueba'); } }
+}
+function save(){
+ const cfg={text:state.raw,name:state.name,page:state.page,seed:state.seed,hidden:state.hidden,values:{wordsPage:els.wordsPage.value,scale:els.scale.value,root:els.root.value,octave:els.octave.value,pattern:els.pattern.value,notesRow:els.notesRow.value,rhythm:els.rhythm.value,colorMode:els.colorMode.value,bpm:els.bpm.value,wave:els.wave.value,loop:els.loop.checked,advance:els.advance.checked}};
+ localStorage.setItem(STORE,JSON.stringify(cfg));
+}
+function load(){
+ const raw=localStorage.getItem(STORE); if(raw){ try{ const d=JSON.parse(raw); state.raw=d.text||''; state.name=d.name||''; state.page=d.page||0; state.seed=d.seed||421; state.hidden=!!d.hidden; Object.entries(d.values||{}).forEach(([k,v])=>{ if(els[k]){ if(els[k].type==='checkbox') els[k].checked=!!v; else els[k].value=v; } }); els.inputText.value=state.raw; if(state.hidden) document.body.classList.add('readonly'); $('focusBtn').textContent=state.hidden?'Mostrar controles':'Ocultar controles'; }catch(e){} }
+ syncOutputs(); if(state.raw) renderScore(); else fetchBook();
+}
+function syncOutputs(){ els.wordsPageOut.textContent=els.wordsPage.value; els.notesRowOut.textContent=els.notesRow.value+' comp.'; els.bpmOut.textContent=els.bpm.value+' bpm'; }
+function page(delta){ paginate(); const before=state.page; state.page=Math.max(0,Math.min(state.pages.length-1,state.page+delta)); if(state.page!==before){ newRhythm(); renderScore(true); } }
+function ensureAudio(){ if(!state.audio) state.audio=new (window.AudioContext||window.webkitAudioContext)(); if(state.audio.state==='suspended') state.audio.resume(); }
+function beep(midi, duration){
+ ensureAudio(); const now=state.audio.currentTime, osc=state.audio.createOscillator(), gain=state.audio.createGain(); osc.type=els.wave.value; osc.frequency.value=440*Math.pow(2,(midi-69)/12); gain.gain.setValueAtTime(.0001,now); gain.gain.exponentialRampToValueAtTime(.15,now+.015); gain.gain.exponentialRampToValueAtTime(.0001,now+duration*.9); osc.connect(gain).connect(state.audio.destination); osc.start(now); osc.stop(now+duration);
+}
+function highlight(i){
+ document.querySelectorAll('.wordPreview .playing').forEach(n=>n.classList.remove('playing'));
+ document.querySelectorAll('.staffSvg .lyricText.current').forEach(n=>n.classList.remove('current'));
+ if(i===null || i===undefined) return;
+ const b=$('pv-'+i); if(b)b.classList.add('playing');
+ document.querySelectorAll('.staffSvg .lyricText[data-note-index="'+i+'"]').forEach(n=>n.classList.add('current'));
+}
+function play(){
+ if(state.playing){ stop(false); return; } if(!state.events.length) renderScore(); if(!state.events.length) return;
+ state.playing=true; $('play').textContent='❚❚ Pausar'; const beat=60/(+els.bpm.value); let i=state.cursor||0;
+ const step=()=>{
+  if(!state.playing) return;
+  if(i>=state.events.length){
+   if(els.loop.checked){i=0; state.cursor=0;}
+   else if(els.advance.checked && state.page<state.pages.length-1){ state.playing=false; state.cursor=0; page(1); play(); return; }
+   else {stop(); return;}
+  }
+  const ev=state.events[i], seconds=beat*ev.beats; state.cursor=i; highlight(ev.rest?null:ev.noteIndex);
+  if(ev.rest) els.transportStatus.textContent=`Silencio de ${FIGURE[ev.duration]}`;
+  else { beep(ev.midi,Math.max(.09,seconds*.86)); els.transportStatus.textContent=`${pitchLabel(ev.midi)} · ${ev.sy} · ${FIGURE[ev.duration]} · grado ${ev.degree+1}`; }
+  i++; state.cursor=i; state.timer=setTimeout(step,seconds*1000);
+ }; step();
+}
+function stop(reset=true){ state.playing=false; clearTimeout(state.timer); $('play').textContent='▶ Reproducir'; if(reset){state.cursor=0; document.querySelectorAll('.sy.active,.wordPreview .playing,.staffSvg .lyricText.current').forEach(n=>n.classList.remove('active','playing','current')); els.transportStatus.textContent='Listo';} }
+SCALES.forEach((s,i)=>els.scale.add(new Option(s[0],i))); ROOTS.forEach((r,i)=>els.root.add(new Option(r,i))); els.scale.value='0'; els.root.value='0';
+['wordsPage','notesRow','bpm'].forEach(k=>els[k].addEventListener('input',()=>{syncOutputs(); if(k==='wordsPage'){ newRhythm(); renderScore(true); } else if(k==='notesRow') renderScore(false); else save();}));
+['scale','root','octave','pattern','colorMode'].forEach(k=>els[k].addEventListener('change',()=>renderScore(false))); els.rhythm.addEventListener('change',()=>{ newRhythm(); renderScore(true); }); ['wave','loop','advance'].forEach(k=>els[k].addEventListener('change',save));
+els.inputText.addEventListener('input',()=>{state.raw=els.inputText.value; state.name='texto pegado'; state.page=0; clearTimeout(state._deb); state._deb=setTimeout(()=>{newRhythm(); renderScore(true);},250);});
+els.pageInput.addEventListener('change',()=>{ paginate(); const before=state.page; state.page=Math.max(0,Math.min(state.pages.length-1,(+els.pageInput.value||1)-1)); if(state.page!==before){ newRhythm(); renderScore(true); } });
+$('fetchBtn').onclick=fetchBook; $('renderBtn').onclick=()=>{state.raw=els.inputText.value; newRhythm(); renderScore(true); toast('Partitura regenerada con ritmo nuevo');}; $('prev').onclick=$('prevSide').onclick=()=>page(-1); $('next').onclick=$('nextSide').onclick=()=>page(1); $('play').onclick=play; $('stop').onclick=()=>stop();
+$('fileInput').addEventListener('change',async e=>{const f=e.target.files[0]; if(f) setText(await f.text(),f.name);});
+$('focusBtn').onclick=()=>{state.hidden=!state.hidden; document.body.classList.toggle('readonly',state.hidden); $('focusBtn').textContent=state.hidden?'Mostrar controles':'Ocultar controles'; save();};
+document.addEventListener('keydown',e=>{ if(['TEXTAREA','INPUT','SELECT'].includes(document.activeElement.tagName)) return; if(e.key==='ArrowLeft') page(-1); if(e.key==='ArrowRight') page(1); if(e.code==='Space'){e.preventDefault(); play();} });
+load();
+})();
+</script>
+</body>
+</html>
